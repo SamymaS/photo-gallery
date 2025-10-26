@@ -1,48 +1,96 @@
-<ion-header>
+<ion-header translucent="true">
   <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-button (click)="close()">
-        <ion-icon name="close-outline"></ion-icon>
-      </ion-button>
-    </ion-buttons>
-    <ion-title>Détail du selfie</ion-title>
+    <ion-title>Détails de la photo</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="toggleLike()">
-        <ion-icon [name]="photo.liked ? 'heart' : 'heart-outline'"
-                  [color]="photo.liked ? 'danger' : 'medium'"></ion-icon>
-      </ion-button>
-      <ion-button color="danger" (click)="delete()">
-        <ion-icon name="trash-outline"></ion-icon>
+      <ion-button (click)="close()" fill="clear">
+        <ion-icon name="close-outline" size="large"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
-  <div class="image-wrap">
-    <ion-img [src]="photo.webviewPath || photo.filepath"></ion-img>
+<ion-content class="modal-content">
+  
+  <!-- Image principale -->
+  <div class="image-container">
+    <ion-img 
+      [src]="photo.webviewPath || photo.filepath" 
+      alt="Photo">
+    </ion-img>
+    <div class="image-gradient"></div>
   </div>
 
-  <ion-list inset="true">
-    <ion-item>
-      <ion-icon name="calendar-outline" slot="start"></ion-icon>
+  <!-- Actions rapides -->
+  <div class="quick-actions">
+    <ion-button 
+      (click)="toggleLike()" 
+      [color]="photo.liked ? 'danger' : 'medium'"
+      fill="clear"
+      class="action-button">
+      <ion-icon [name]="photo.liked ? 'heart' : 'heart-outline'"></ion-icon>
+    </ion-button>
+    
+    <ion-button 
+      (click)="openOnMap()" 
+      color="primary"
+      fill="clear"
+      class="action-button"
+      *ngIf="photo.coords">
+      <ion-icon name="map-outline"></ion-icon>
+    </ion-button>
+    
+    <ion-button 
+      (click)="delete()" 
+      color="danger"
+      fill="clear"
+      class="action-button">
+      <ion-icon name="trash-outline"></ion-icon>
+    </ion-button>
+  </div>
+
+  <!-- Informations -->
+  <ion-list lines="none" class="info-list">
+    
+    <!-- Date -->
+    <ion-item class="info-item">
+      <ion-icon name="calendar-outline" slot="start" color="primary"></ion-icon>
       <ion-label>
-        {{ photo.takenAt | date:'fullDate' }} – {{ photo.takenAt | date:'shortTime' }}
+        <h3>Date de capture</h3>
+        <p>{{ getDateLabel() }}</p>
       </ion-label>
     </ion-item>
 
-    <!-- Astuce de narrowing : on alias coords avec 'as c' -->
-    <ion-item *ngIf="photo.coords as c">
-      <ion-icon name="pin-outline" slot="start"></ion-icon>
+    <!-- Coordonnées GPS -->
+    <ion-item *ngIf="photo.coords" class="info-item">
+      <ion-icon name="location-outline" slot="start" color="success"></ion-icon>
       <ion-label>
-        {{ c.lat | number:'1.5-5' }}, {{ c.lng | number:'1.5-5' }}
-        <div *ngIf="address" style="opacity:.85">{{ address }}</div>
+        <h3>Localisation</h3>
+        <p>{{ getCoordinatesLabel() }}</p>
+        <p *ngIf="address" class="address-text">
+          <ion-badge color="primary">
+            <ion-icon name="location-outline"></ion-icon>
+            {{ address }}
+          </ion-badge>
+        </p>
+        <p *ngIf="isLoadingAddress" class="loading-text">
+          Chargement de l'adresse...
+        </p>
       </ion-label>
     </ion-item>
 
-    <ion-item button detail (click)="openOnMap()">
-      <ion-icon name="map-outline" slot="start"></ion-icon>
-      <ion-label>Voir sur la carte</ion-label>
+    <!-- Like -->
+    <ion-item class="info-item">
+      <ion-icon 
+        [name]="photo.liked ? 'heart' : 'heart-outline'" 
+        slot="start" 
+        [color]="photo.liked ? 'danger' : 'medium'">
+      </ion-icon>
+      <ion-label>
+        <h3>Statut</h3>
+        <p>{{ photo.liked ? 'Cette photo est dans vos favoris ❤️' : 'Ajoutez cette photo à vos favoris' }}</p>
+      </ion-label>
     </ion-item>
+
   </ion-list>
 </ion-content>
+

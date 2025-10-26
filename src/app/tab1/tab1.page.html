@@ -1,32 +1,70 @@
 <ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>Caméra</ion-title>
+  <ion-toolbar color="dark">
+    <ion-title>Capture photo</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
+<ion-content [fullscreen]="true" class="camera-content">
+  
+  <!-- Prévisualisation en temps réel (Web uniquement) -->
   <div class="camera-wrap" *ngIf="!useFallback; else fallback">
-    <video id="live-video" autoplay playsinline muted></video>
+    <video 
+      #liveVideo
+      id="live-video" 
+      autoplay 
+      playsinline 
+      muted
+      class="live-preview">
+    </video>
 
     <!-- Boutons overlay -->
-    <div class="controls">
-      <ion-button shape="round" fill="solid" (click)="flipCamera()" class="btn-left" aria-label="Flip caméra">
+    <div class="controls-overlay">
+      <ion-button 
+        shape="round" 
+        fill="solid" 
+        color="light"
+        (click)="flipCamera()" 
+        class="flip-button" 
+        *ngIf="isStreaming"
+        aria-label="Changer de caméra">
         <ion-icon name="camera-reverse-outline"></ion-icon>
       </ion-button>
 
-      <ion-fab vertical="bottom" horizontal="center">
-        <ion-fab-button size="large" (click)="capture()" aria-label="Prendre une photo">
+      <ion-fab vertical="bottom" horizontal="center" *ngIf="isStreaming || Capacitor.getPlatform() !== 'web'">
+        <ion-fab-button 
+          size="large" 
+          color="light"
+          (click)="capture()" 
+          [disabled]="isCapturing"
+          aria-label="Prendre une photo">
           <ion-icon name="radio-button-on-outline"></ion-icon>
         </ion-fab-button>
       </ion-fab>
     </div>
   </div>
 
+  <!-- Fallback si la prévisualisation n'est pas disponible -->
   <ng-template #fallback>
-    <div class="fallback">
-      <p>Prévisualisation caméra indisponible sur cet appareil/navigateur.</p>
-      <ion-button (click)="capture()">Prendre une photo (fallback)</ion-button>
-      <p *ngIf="lastError" class="hint">({{ lastError }})</p>
+    <div class="fallback-container">
+      <ion-icon name="camera-outline" class="camera-icon"></ion-icon>
+      <h2>Capture Photo</h2>
+      <p>Utilisez le bouton ci-dessous pour prendre une photo</p>
+      
+      <ion-button 
+        expand="block" 
+        shape="round" 
+        size="large"
+        (click)="capture()"
+        [disabled]="isCapturing">
+        <ion-icon name="camera-outline" slot="start"></ion-icon>
+        Prendre une photo
+      </ion-button>
+      
+      <p *ngIf="lastError" class="error-message">
+        <ion-icon name="warning-outline"></ion-icon>
+        {{ lastError }}
+      </p>
     </div>
   </ng-template>
+
 </ion-content>

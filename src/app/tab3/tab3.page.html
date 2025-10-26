@@ -1,9 +1,40 @@
 <ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>Carte</ion-title>
+  <ion-toolbar color="primary">
+    <ion-title>
+      <ion-icon name="map-outline" style="vertical-align: middle; margin-right: 8px;"></ion-icon>
+      Carte Interactive
+    </ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <div id="map"></div>
+<ion-content [fullscreen]="true" class="map-content">
+  
+  <!-- État de chargement -->
+  <div *ngIf="loading" class="loading-container">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Chargement de la carte...</p>
+  </div>
+
+  <!-- État vide -->
+  <div *ngIf="!loading && isEmpty" class="empty-container">
+    <ion-icon name="location-outline" class="empty-icon"></ion-icon>
+    <h2>Aucune photo géolocalisée</h2>
+    <p>Prenez des photos pour les voir apparaître sur la carte</p>
+  </div>
+
+  <!-- Carte Leaflet -->
+  <div id="map" *ngIf="!loading"></div>
+
+  <!-- Boutons de contrôle -->
+  <ion-fab 
+    *ngIf="!loading && !isEmpty"
+    slot="fixed" 
+    vertical="bottom" 
+    horizontal="end">
+    <ion-fab-button 
+      color="primary"
+      (click)="centerOnMyLocation()">
+      <ion-icon name="location-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
 </ion-content>

@@ -1,103 +1,264 @@
-import { Component, OnDestroy } from '@angular/core';
-import { IonicModule, ToastController } from '@ionic/angular';
+import { Component, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { 
+  IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonIcon, IonFab, IonFabButton,
+  ToastController, AlertController, LoadingController 
+} from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
 import { PhotoService } from '../services/photo.service';
 import { Capacitor } from '@capacitor/core';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { addIcons } from 'ionicons';
+import { cameraOutline, cameraReverseOutline, radioButtonOnOutline } from 'ionicons/icons';
 
 @Component({
   standalone: true,
   selector: 'app-tab1',
   templateUrl: './tab1.page.html',
   styleUrls: ['./tab1.page.scss'],
-  imports: [IonicModule, CommonModule],
+  imports: [CommonModule, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonIcon, IonFab, IonFabButton]
 })
 export class Tab1Page implements OnDestroy {
+  @ViewChild('liveVideo', { static: false }) videoRef?: ElementRef<HTMLVideoElement>;
+  
   private videoEl?: HTMLVideoElement;
   private stream?: MediaStream;
-  facingMode: 'user' | 'environment' = 'user';
+  private isInitialized = false;
+  
+  facingMode: 'user' | 'environment' = 'environment';
   isStreaming = false;
   useFallback = false;
   lastError?: string;
+  isCapturing = false;
 
-  constructor(private photos: PhotoService, private toast: ToastController) {}
+  constructor(
+    private photoService: PhotoService, 
+    private toastController: ToastController,
+    private alertController: AlertController,
+    private loadingController: LoadingController
+  ) {
+    addIcons({ cameraOutline, cameraReverseOutline, radioButtonOnOutline });
+  }
 
   async ionViewDidEnter() {
-    // Préview live uniquement sur Web
+    if (!this.isInitialized) {
+      await this.initializePermissions();
+      this.isInitialized = true;
+    }
+    
+    // Prévisualisation live uniquement sur Web
     if (Capacitor.getPlatform() === 'web') {
-      const el = document.querySelector<HTMLVideoElement>('#live-video');
-      this.videoEl = el ?? undefined;
       await this.startStream();
     }
   }
-  ionViewWillLeave() { this.stopStream(); }
-  ngOnDestroy() { this.stopStream(); }
 
-  private async startStream() {
+  ionViewWillLeave() {
     this.stopStream();
-    this.isStreaming = false; this.useFallback = false; this.lastError = undefined;
+  }
 
+  ngOnDestroy() {
+    this.stopStream();
+  }
+
+  /**
+   * Initialise et vérifie les permissions
+   */
+  private async initializePermissions(): Promise<void> {
+    const hasCameraPermission = await this.photoService.checkCameraPermissions();
+    const hasLocationPermission = await this.photoService.checkGeolocationPermissions();
+
+    if (!hasCameraPermission) {
+      const alert = await this.alertController.create({
+        header: 'Permission Caméra',
+        message: 'Cette application nécessite l\'accès à la caméra pour prendre des photos.',
+        buttons: ['OK']
+      });
+      await alert.present();
+    }
+
+    if (!hasLocationPermission) {
+      console.warn('Permission de géolocalisation non accordée');
+    }
+  }
+
+  /**
+   * Démarre le flux vidéo pour la prévisualisation (Web uniquement)
+   */
+  private async startStream(): Promise<void> {
+    this.stopStream();
+    this.isStreaming = false;
+    this.useFallback = false;
+    this.lastError = undefined;
+
+    // Vérifier la disponibilité de l'API MediaDevices
     const hasMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-    if (!hasMedia || !this.videoEl) { this.useFallback = true; return; }
+    
+    if (!hasMedia) {
+      this.useFallback = true;
+      this.lastError = 'API MediaDevices non supportée';
+      return;
+    }
+
+    // Attendre que la référence vidéo soit disponible
+    if (this.videoRef) {
+      this.videoEl = this.videoRef.nativeElement;
+    } else {
+      this.videoEl = document.querySelector('#live-video') ?? undefined;
+    }
+
+    if (!this.videoEl) {
+      this.useFallback = true;
+      this.lastError = 'Élément vidéo non trouvé';
+      return;
+    }
 
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: this.facingMode }, audio: false
+        video: { facingMode: this.facingMode },
+        audio: false
       });
+      
       this.videoEl.srcObject = this.stream;
       await this.videoEl.play();
       this.isStreaming = true;
-    } catch (e: any) {
+    } catch (error: any) {
+      console.error('Erreur lors du démarrage du flux:', error);
       this.useFallback = true;
-      this.lastError = e?.message ?? 'Impossible d’accéder à la caméra';
+      this.lastError = error?.message ?? 'Impossible d\'accéder à la caméra';
     }
   }
 
-  private stopStream() {
+  /**
+   * Arrête le flux vidéo
+   */
+  private stopStream(): void {
     this.isStreaming = false;
-    if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); this.stream = undefined; }
-    if (this.videoEl) { this.videoEl.pause(); (this.videoEl as any).srcObject = null; }
+    
+    if (this.stream) {
+      this.stream.getTracks().forEach(track => track.stop());
+      this.stream = undefined;
+    }
+    
+    if (this.videoEl) {
+      this.videoEl.pause();
+      (this.videoEl as any).srcObject = null;
+    }
   }
 
-  async flipCamera() {
-    if (Capacitor.getPlatform() !== 'web') return;
+  /**
+   * Bascule entre caméra avant et arrière (Web uniquement)
+   */
+  async flipCamera(): Promise<void> {
+    if (Capacitor.getPlatform() !== 'web') {
+      return;
+    }
+    
     this.facingMode = this.facingMode === 'user' ? 'environment' : 'user';
     await this.startStream();
+    
+    const toast = await this.toastController.create({
+      message: this.facingMode === 'user' ? 'Caméra avant' : 'Caméra arrière',
+      duration: 1000
+    });
+    await toast.present();
   }
 
-  async capture() {
-    // Sur Android/iOS: caméra native Capacitor
-    if (Capacitor.getPlatform() !== 'web') {
-      try {
-        const shot = await Camera.getPhoto({
-          quality: 85, allowEditing: false,
-          resultType: CameraResultType.Uri,
-          source: CameraSource.Camera
+  /**
+   * Capture une photo
+   */
+  async capture(): Promise<void> {
+    if (this.isCapturing) {
+      return;
+    }
+
+    this.isCapturing = true;
+    const loading = await this.loadingController.create({
+      message: 'Capture en cours...',
+      duration: 3000
+    });
+    await loading.present();
+
+    try {
+      // Sur Android/iOS : utiliser la caméra native Capacitor
+      if (Capacitor.getPlatform() !== 'web') {
+        const photo = await this.photoService.capturePhoto();
+        
+        if (photo) {
+          await this.photoService.addPhoto(photo);
+          
+          const toast = await this.toastController.create({
+            message: 'Photo ajoutée à la galerie',
+            duration: 2000,
+            color: 'success'
+          });
+          await toast.present();
+        }
+        return;
+      }
+
+      // Sur Web : capture depuis la prévisualisation
+      if (!this.isStreaming || !this.videoEl) {
+        const photo = await this.photoService.capturePhoto();
+        
+        if (photo) {
+          await this.photoService.addPhoto(photo);
+          
+          const toast = await this.toastController.create({
+            message: 'Photo ajoutée à la galerie',
+            duration: 2000,
+            color: 'success'
+          });
+          await toast.present();
+        }
+        return;
+      }
+
+      // Capture depuis le flux vidéo
+      const video = this.videoEl;
+      const width = video.videoWidth;
+      const height = video.videoHeight;
+
+      if (!width || !height) {
+        const toast = await this.toastController.create({
+          message: 'Flux caméra non prêt',
+          duration: 2000,
+          color: 'warning'
         });
-        await this.photos.addFromPhoto(shot);
-        (await this.toast.create({ message: 'Photo ajoutée', duration: 1100 })).present();
-      } catch { /* annulé */ }
-      return;
-    }
+        await toast.present();
+        return;
+      }
 
-    // Sur Web: capture depuis la préview (fallback sinon)
-    if (!this.isStreaming || !this.videoEl) {
-      await this.photos.addNewToGallery();
-      (await this.toast.create({ message: 'Photo ajoutée', duration: 1100 })).present();
-      return;
-    }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        throw new Error('Impossible d\'obtenir le context canvas');
+      }
 
-    const v = this.videoEl;
-    const w = v.videoWidth, h = v.videoHeight;
-    if (!w || !h) {
-      (await this.toast.create({ message: 'Flux caméra non prêt', duration: 1300, color: 'warning' })).present();
-      return;
+      ctx.drawImage(video, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      
+      await this.photoService.addPhotoFromDataUrl(dataUrl);
+
+      const toast = await this.toastController.create({
+        message: 'Photo capturée et enregistrée',
+        duration: 2000,
+        color: 'success'
+      });
+      await toast.present();
+
+    } catch (error: any) {
+      console.error('Erreur lors de la capture:', error);
+      
+      const toast = await this.toastController.create({
+        message: error?.message ?? 'Erreur lors de la capture',
+        duration: 3000,
+        color: 'danger'
+      });
+      await toast.present();
+    } finally {
+      await loading.dismiss();
+      this.isCapturing = false;
     }
-    const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
-    const ctx = canvas.getContext('2d')!;
-    ctx.drawImage(v, 0, 0, w, h);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-    await this.photos.addFromDataUrl(dataUrl);
-    (await this.toast.create({ message: 'Selfie enregistré', duration: 1200 })).present();
   }
 }

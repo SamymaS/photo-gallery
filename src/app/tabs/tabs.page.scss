@@ -1,1 +1,75 @@
+// Animations de transition entre les tabs
+ion-router-outlet {
+  position: relative;
+  overflow: hidden;
+  
+  // Animation slide
+  &[animating] {
+    animation: slideIn 300ms ease-in-out;
+  }
+}
 
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// Animation pour les FABs
+ion-fab-button {
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
+  &:hover {
+    transform: scale(1.1);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+// Styles pour la navigation tabs
+ion-tab-bar {
+  --background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  
+  ion-tab-button {
+    transition: all 0.3s ease;
+    
+    ion-icon {
+      transition: all 0.3s ease;
+    }
+    
+    &:hover {
+      transform: translateY(-3px);
+    }
+    
+    &.tab-selected {
+      ion-icon {
+        transform: scale(1.2);
+      }
+    }
+  }
+}
+
+// Animation d'apparition pour les pages
+ion-content {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
