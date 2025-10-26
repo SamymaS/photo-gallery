@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { 
   IonHeader, IonToolbar, IonTitle, IonContent, IonGrid, IonRow, IonCol, 
-  IonCard, IonCardContent, IonImg, IonFab, IonFabButton, IonIcon, IonSpinner,
+  IonCard, IonImg, IonFab, IonFabButton, IonIcon, IonSpinner,
   IonButton, IonBadge, ToastController, ModalController, AlertController
 } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
@@ -20,7 +20,7 @@ import { cameraOutline, heart, heartOutline, imagesOutline, location } from 'ion
   imports: [
     CommonModule,
     IonHeader, IonToolbar, IonTitle, IonContent, IonGrid, IonRow, IonCol,
-    IonCard, IonCardContent, IonImg, IonFab, IonFabButton, IonIcon, IonSpinner,
+    IonCard, IonImg, IonFab, IonFabButton, IonIcon, IonSpinner,
     IonButton, IonBadge
   ]
 })

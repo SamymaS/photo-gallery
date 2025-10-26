@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { Camera, CameraResultType, CameraSource, Photo, CameraPermissionStatus } from '@capacitor/camera';
+import { Camera, CameraResultType, CameraSource, Photo } from '@capacitor/camera';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Preferences } from '@capacitor/preferences';
-import { Geolocation, PositionOptions } from '@capacitor/geolocation';
+import { Geolocation, PositionOptions, PermissionStatus } from '@capacitor/geolocation';
 import { Capacitor } from '@capacitor/core';
 
 export interface UserPhoto {
@@ -150,8 +150,8 @@ export class PhotoService {
    */
   async checkGeolocationPermissions(): Promise<boolean> {
     try {
-      const status = await Geolocation.requestPermissions();
-      return status === 'granted';
+      const status: PermissionStatus = await Geolocation.requestPermissions();
+      return status.location === 'granted';
     } catch (error) {
       console.error('Erreur lors de la vérification des permissions de géolocalisation:', error);
       return false;

@@ -1,7 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { 
   IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle, 
-  IonContent, IonImg, IonList, IonItem, IonLabel, IonBadge, IonSpinner,
+  IonContent, IonImg, IonList, IonItem, IonLabel, IonBadge,
   ModalController, ToastController 
 } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
@@ -17,7 +17,7 @@ import { closeOutline, heart, heartOutline, calendarOutline, locationOutline, ma
   imports: [
     CommonModule,
     IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle, IonContent,
-    IonImg, IonList, IonItem, IonLabel, IonBadge, IonSpinner
+    IonImg, IonList, IonItem, IonLabel, IonBadge
   ],
 })
 export class PhotoModalComponent implements OnInit {

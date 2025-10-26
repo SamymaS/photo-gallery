@@ -1,6 +1,6 @@
 import { Component, AfterViewInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { 
-  IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonIcon, IonSpinner,
+  IonHeader, IonToolbar, IonTitle, IonContent, IonIcon, IonSpinner,
   IonFab, IonFabButton, ModalController, ToastController, AlertController
 } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
@@ -31,7 +31,7 @@ const DefaultIcon = L.icon({
   selector: 'app-tab3',
   templateUrl: './tab3.page.html',
   styleUrls: ['./tab3.page.scss'],
-  imports: [CommonModule, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonIcon, IonSpinner, IonFab, IonFabButton]
+  imports: [CommonModule, IonHeader, IonToolbar, IonTitle, IonContent, IonIcon, IonSpinner, IonFab, IonFabButton]
 })
 export class Tab3Page implements AfterViewInit, OnDestroy {
   private map?: L.Map;
