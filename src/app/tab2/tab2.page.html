@@ -1,17 +1,42 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>
-      Tab 2
-    </ion-title>
+    <ion-title>Selfie</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Tab 2</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content [fullscreen]="true" class="ion-padding">
+  <ion-list *ngIf="photos.length; else empty">
+    <ion-item *ngFor="let p of photos" (click)="openModal(p)">
+      <ion-thumbnail slot="start">
+        <img [src]="p.webviewPath || p.filepath" />
+      </ion-thumbnail>
 
-  <app-explore-container name="Tab 2 page"></app-explore-container>
+      <ion-label class="ion-text-wrap">
+        <div>{{ p.takenAt | date:'short' }}</div>
+        <div *ngIf="p.coords" style="opacity:.8;font-size:.9em">
+          {{ p.coords.lat | number:'1.5-5' }}, {{ p.coords.lng | number:'1.5-5' }}
+        </div>
+      </ion-label>
+
+      <ion-buttons slot="end">
+        <ion-button fill="clear" (click)="like(p, $event)">
+          <ion-icon [name]="p.liked ? 'heart' : 'heart-outline'"
+                    [color]="p.liked ? 'danger':'medium'"></ion-icon>
+        </ion-button>
+        <ion-button fill="clear" color="danger" (click)="removePhoto(p, $event)">
+          <ion-icon name="trash-outline"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    </ion-item>
+  </ion-list>
+
+  <ng-template #empty>
+    <ion-text>Aucun selfie pour le moment.</ion-text>
+  </ng-template>
+
+  <ion-fab slot="fixed" vertical="bottom" horizontal="end">
+    <ion-fab-button (click)="addPhoto()">
+      <ion-icon name="camera-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
 </ion-content>

@@ -1,17 +1,32 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>
-      Tab 1
-    </ion-title>
+    <ion-title>Caméra</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Tab 1</ion-title>
-    </ion-toolbar>
-  </ion-header>
+  <div class="camera-wrap" *ngIf="!useFallback; else fallback">
+    <video id="live-video" autoplay playsinline muted></video>
 
-  <app-explore-container name="Tab 1 page"></app-explore-container>
+    <!-- Boutons overlay -->
+    <div class="controls">
+      <ion-button shape="round" fill="solid" (click)="flipCamera()" class="btn-left" aria-label="Flip caméra">
+        <ion-icon name="camera-reverse-outline"></ion-icon>
+      </ion-button>
+
+      <ion-fab vertical="bottom" horizontal="center">
+        <ion-fab-button size="large" (click)="capture()" aria-label="Prendre une photo">
+          <ion-icon name="radio-button-on-outline"></ion-icon>
+        </ion-fab-button>
+      </ion-fab>
+    </div>
+  </div>
+
+  <ng-template #fallback>
+    <div class="fallback">
+      <p>Prévisualisation caméra indisponible sur cet appareil/navigateur.</p>
+      <ion-button (click)="capture()">Prendre une photo (fallback)</ion-button>
+      <p *ngIf="lastError" class="hint">({{ lastError }})</p>
+    </div>
+  </ng-template>
 </ion-content>

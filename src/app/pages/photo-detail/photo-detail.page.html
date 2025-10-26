@@ -1,0 +1,40 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/tab2"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Détail</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="like()">
+        <ion-icon [name]="photo?.liked ? 'heart' : 'heart-outline'" [color]="photo?.liked ? 'danger':'medium'"></ion-icon>
+      </ion-button>
+      <ion-button color="danger" (click)="delete()">
+        <ion-icon name="trash-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-img *ngIf="photo" [src]="photo.webviewPath || photo.filepath" style="max-height:50vh; object-fit:contain;"></ion-img>
+
+  <ion-list *ngIf="photo" inset="true">
+    <ion-item>
+      <ion-icon name="calendar-outline" slot="start"></ion-icon>
+      <ion-label>{{ photo.takenAt | date:'fullDate' }} – {{ photo.takenAt | date:'shortTime' }}</ion-label>
+    </ion-item>
+
+    <ion-item *ngIf="photo.coords">
+      <ion-icon name="pin-outline" slot="start"></ion-icon>
+      <ion-label>
+        {{ photo.coords.lat | number:'1.5-5' }}, {{ photo.coords.lng | number:'1.5-5' }}
+        <div *ngIf="address" style="opacity:.85">{{ address }}</div>
+      </ion-label>
+    </ion-item>
+
+    <ion-item button detail (click)="openOnMap()">
+      <ion-icon name="map-outline" slot="start"></ion-icon>
+      <ion-label>Voir sur la carte</ion-label>
+    </ion-item>
+  </ion-list>
+</ion-content>

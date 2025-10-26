@@ -1,0 +1,11 @@
+.image-wrap {
+  display: grid;
+  place-items: center;
+  height: 60vh;
+  overflow: hidden;
+}
+ion-img {
+  max-height: 100%;
+  width: 100%;
+  object-fit: contain;
+}
