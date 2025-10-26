@@ -1,70 +1,35 @@
 <ion-header [translucent]="true">
-  <ion-toolbar color="dark">
-    <ion-title>Capture photo</ion-title>
+  <ion-toolbar>
+    <ion-title>Caméra</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="camera-content">
+<ion-content [fullscreen]="true" class="ion-padding">
   
-  <!-- Prévisualisation en temps réel (Web uniquement) -->
-  <div class="camera-wrap" *ngIf="!useFallback; else fallback">
-    <video 
-      #liveVideo
-      id="live-video" 
-      autoplay 
-      playsinline 
-      muted
-      class="live-preview">
-    </video>
-
-    <!-- Boutons overlay -->
-    <div class="controls-overlay">
-      <ion-button 
-        shape="round" 
-        fill="solid" 
-        color="light"
-        (click)="flipCamera()" 
-        class="flip-button" 
-        *ngIf="isStreaming"
-        aria-label="Changer de caméra">
-        <ion-icon name="camera-reverse-outline"></ion-icon>
+  <div class="camera-container">
+    <!-- Message si pas de caméra -->
+    <div *ngIf="!hasCamera" class="no-camera">
+      <ion-icon name="camera-outline" size="large"></ion-icon>
+      <h2>Caméra non disponible</h2>
+      <p>Autorisez l'accès à la caméra dans les paramètres</p>
+      <ion-button (click)="requestCameraPermission()" expand="block">
+        Demander l'autorisation
       </ion-button>
-
-      <ion-fab vertical="bottom" horizontal="center" *ngIf="isStreaming">
-        <ion-fab-button 
-          size="large" 
-          color="light"
-          (click)="capture()" 
-          [disabled]="isCapturing"
-          aria-label="Prendre une photo">
-          <ion-icon name="radio-button-on-outline"></ion-icon>
-        </ion-fab-button>
-      </ion-fab>
     </div>
-  </div>
 
-  <!-- Fallback si la prévisualisation n'est pas disponible -->
-  <ng-template #fallback>
-    <div class="fallback-container">
-      <ion-icon name="camera-outline" class="camera-icon"></ion-icon>
-      <h2>Capture Photo</h2>
-      <p>Utilisez le bouton ci-dessous pour prendre une photo</p>
-      
-      <ion-button 
-        expand="block" 
-        shape="round" 
-        size="large"
-        (click)="capture()"
-        [disabled]="isCapturing">
-        <ion-icon name="camera-outline" slot="start"></ion-icon>
+    <!-- Interface de capture -->
+    <div *ngIf="hasCamera" class="camera-controls">
+      <ion-button (click)="takePhoto()" expand="block" size="large" color="primary">
+        <ion-icon name="camera"></ion-icon>
         Prendre une photo
       </ion-button>
-      
-      <p *ngIf="lastError" class="error-message">
-        <ion-icon name="warning-outline"></ion-icon>
-        {{ lastError }}
-      </p>
     </div>
-  </ng-template>
+
+    <!-- Afficher les photos prises -->
+    <div *ngIf="lastPhoto" class="last-photo">
+      <h3>Dernière photo :</h3>
+      <img [src]="lastPhoto" alt="Dernière photo" style="max-width: 100%; height: auto; border-radius: 8px;">
+    </div>
+  </div>
 
 </ion-content>

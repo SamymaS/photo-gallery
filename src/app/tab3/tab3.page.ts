@@ -1,17 +1,15 @@
-import { Component, AfterViewInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, AfterViewInit } from '@angular/core';
 import { 
   IonHeader, IonToolbar, IonTitle, IonContent, IonIcon, IonSpinner,
-  IonFab, IonFabButton, ModalController, ToastController, AlertController
+  IonFab, IonFabButton, ToastController
 } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
 import { Geolocation } from '@capacitor/geolocation';
 import * as L from 'leaflet';
 import 'leaflet.markercluster';
 import { PhotoService, UserPhoto } from '../services/photo.service';
-import { PhotoModalComponent } from '../components/photo-modal/photo-modal.component';
 import { addIcons } from 'ionicons';
-import { mapOutline, compassOutline, locationOutline } from 'ionicons/icons';
+import { mapOutline, locate } from 'ionicons/icons';
 
 // Configuration des icônes Leaflet
 const DefaultIcon = L.icon({
@@ -33,257 +31,129 @@ const DefaultIcon = L.icon({
   styleUrls: ['./tab3.page.scss'],
   imports: [CommonModule, IonHeader, IonToolbar, IonTitle, IonContent, IonIcon, IonSpinner, IonFab, IonFabButton]
 })
-export class Tab3Page implements AfterViewInit, OnDestroy {
+export class Tab3Page implements AfterViewInit {
   private map?: L.Map;
   private cluster?: L.MarkerClusterGroup;
-  private markers: L.Marker[] = [];
-  
   photos: UserPhoto[] = [];
   loading = true;
-  isEmpty = false;
-  centerOnUser = false;
 
   constructor(
     private photoService: PhotoService,
-    private modalController: ModalController,
-    private toastController: ToastController,
-    private router: Router,
-    private cdr: ChangeDetectorRef
+    private toastController: ToastController
   ) {
-    addIcons({ mapOutline, compassOutline, locationOutline });
+    addIcons({ mapOutline, locate });
   }
 
   async ngAfterViewInit() {
-    await this.initializeMap();
+    // Attendre que le DOM soit complètement rendu
+    await this.delay(300);
+    await this.initMap();
   }
 
-  ngOnDestroy() {
-    this.cleanup();
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  /**
-   * Initialise la carte avec les marqueurs
-   */
-  private async initializeMap(): Promise<void> {
+  async initMap() {
     this.loading = true;
 
     try {
+      console.log('Initialisation de la carte...');
+      
       await this.photoService.loadSaved();
       this.photos = this.photoService.getPhotosWithCoords();
-      this.isEmpty = this.photos.length === 0;
-
-      // Initialiser la carte
-      await this.createMap();
       
-      if (!this.isEmpty) {
-        await this.addMarkersToMap();
+      console.log('Photos avec coordonnées:', this.photos.length);
+
+      // S'assurer que l'élément map existe
+      const mapElement = document.getElementById('map');
+      if (!mapElement) {
+        console.error('Élément #map non trouvé');
+        this.loading = false;
+        return;
       }
 
-      this.loading = false;
-      this.cdr.detectChanges();
+      console.log('Élément map trouvé');
+
+      // Créer la carte
+      console.log('Création de la carte Leaflet...');
+      this.map = L.map('map', {
+        preferCanvas: false
+      }).setView([48.8566, 2.3522], 12);
+      
+      console.log('Carte créée, ajout des tuiles...');
+      
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap',
+        maxZoom: 19
+      }).addTo(this.map);
+
+      // Créer les clusters
+      this.cluster = L.markerClusterGroup({
+        maxClusterRadius: 80,
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: false
+      });
+
+      this.map.addLayer(this.cluster);
+
+      // Ajouter les marqueurs
+      console.log('Ajout des marqueurs...');
+      this.photos.forEach((photo, index) => {
+        if (photo.coords) {
+          console.log(`Marqueur ${index + 1}: [${photo.coords.lat}, ${photo.coords.lng}]`);
+          const marker = L.marker([photo.coords.lat, photo.coords.lng]);
+          
+          const popupContent = `
+            <div style="text-align: center; padding: 8px;">
+              <img src="${photo.webviewPath || photo.filepath}" 
+                   style="width: 120px; height: 120px; object-fit: cover; border-radius: 8px;"/>
+              <div style="margin-top: 8px; font-size: 12px;">
+                ${new Date(photo.takenAt).toLocaleDateString('fr-FR')}
+              </div>
+            </div>
+          `;
+          
+          marker.bindPopup(popupContent);
+          this.cluster!.addLayer(marker);
+        }
+      });
+
+      console.log('Marqueurs ajoutés. Total:', this.cluster.getLayers().length);
+
+      // Ajuster la vue
+      if (this.cluster.getLayers().length > 0) {
+        const bounds = this.cluster.getBounds();
+        if (bounds.isValid()) {
+          console.log('Ajustement de la vue aux marqueurs...');
+          this.map.fitBounds(bounds);
+        }
+      }
+
+      console.log('Carte initialisée avec succès');
+
     } catch (error) {
-      console.error('Erreur lors de l\'initialisation de la carte:', error);
+      console.error('Erreur initialisation carte:', error);
+    } finally {
       this.loading = false;
-      this.cdr.detectChanges();
     }
   }
 
-  /**
-   * Crée l'instance de la carte Leaflet
-   */
-  private async createMap(): Promise<void> {
-    const container = document.getElementById('map');
-    if (!container) {
-      throw new Error('Conteneur de carte non trouvé');
-    }
-
-    // Déterminer le centre initial
-    let center: [number, number] = [48.8566, 2.3522]; // Paris par défaut
-    let zoom = 12;
-
-    if (this.photos.length > 0) {
-      const bounds = this.calculateBounds(this.photos);
-      center = bounds.center;
-      zoom = bounds.zoom;
-    }
-
-    this.map = L.map('map').setView(center, zoom);
-
-    // Ajouter la tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 19
-    }).addTo(this.map);
-
-    // Créer le groupe de clusters
-    this.cluster = L.markerClusterGroup({
-      showCoverageOnHover: false,
-      spiderfyOnMaxZoom: true,
-      disableClusteringAtZoom: 16,
-      maxClusterRadius: 80,
-      chunkedLoading: true,
-      removeOutsideVisibleBounds: true,
-      animate: true,
-      zoomToBoundsOnClick: true
-    });
-
-    this.map.addLayer(this.cluster);
-  }
-
-  /**
-   * Ajoute les marqueurs à la carte
-   */
-  private async addMarkersToMap(): Promise<void> {
-    if (!this.map || !this.cluster) return;
-
-    for (const photo of this.photos) {
-      if (!photo.coords) continue;
-
-      // Créer un marqueur personnalisé
-      const marker = L.marker([photo.coords.lat, photo.coords.lng], {
-        icon: DefaultIcon
-      });
-
-      // Créer le contenu du popup
-      const imgUrl = photo.webviewPath || photo.filepath;
-      const date = new Date(photo.takenAt);
-      const formattedDate = date.toLocaleString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-
-      const popupContent = `
-        <div style="text-align: center; padding: 4px; cursor: pointer;" 
-             class="popup-content"
-             onclick="window.dispatchEvent(new CustomEvent('openPhotoModal', {detail: ${JSON.stringify(photo.id)}}));">
-          <img src="${imgUrl}" 
-               style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; margin-bottom: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);" 
-               loading="lazy" />
-          <div style="font-size: 11px; color: #666; font-weight: 500;">
-            ${formattedDate}
-          </div>
-          ${photo.liked ? '<div style="margin-top: 4px;"><span style="color: #eb445a; font-size: 14px;">❤️</span></div>' : ''}
-          <div style="margin-top: 8px; padding: 4px 8px; background: var(--ion-color-primary); color: white; border-radius: 12px; font-size: 10px; font-weight: 600;">
-            Voir détails →
-          </div>
-        </div>
-      `;
-
-      marker.bindPopup(popupContent, {
-        className: 'photo-popup',
-        maxWidth: 150,
-        offset: [0, -10]
-      });
-
-      // Gérer le clic sur le marqueur pour ouvrir la modal directement
-      marker.on('click', (e) => {
-        e.target.closePopup(); // Fermer le popup
-        this.openPhotoDetail(photo);
-      });
-
-      // Ajouter au cluster
-      this.cluster.addLayer(marker);
-      this.markers.push(marker);
-    }
-
-    // Ajuster la vue pour afficher tous les marqueurs
-    if (this.cluster.getLayers().length > 0) {
-      const bounds = this.cluster.getBounds();
-      if (bounds.isValid()) {
-        this.map.fitBounds(bounds, {
-          padding: [50, 50],
-          maxZoom: 14
-        });
-      }
-    }
-  }
-
-  /**
-   * Ouvre la modal de détail pour une photo
-   */
-  async openPhotoDetail(photo: UserPhoto): Promise<void> {
-    const modal = await this.modalController.create({
-      component: PhotoModalComponent,
-      componentProps: { photo },
-      breakpoints: [0, 0.6, 0.9, 1],
-      initialBreakpoint: 0.9
-    });
-
-    await modal.present();
-
-    const { data } = await modal.onDidDismiss();
-    
-    if (data?.deleted) {
-      await this.initializeMap(); // Recharger après suppression
-    }
-  }
-
-  /**
-   * Centre la carte sur la position de l'utilisateur
-   */
-  async centerOnMyLocation(): Promise<void> {
+  async centerMap() {
     try {
-      const position = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: true
-      });
-
+      const position = await Geolocation.getCurrentPosition();
+      
       if (this.map) {
-        this.map.setView(
-          [position.coords.latitude, position.coords.longitude],
-          15
-        );
-
+        this.map.setView([position.coords.latitude, position.coords.longitude], 15);
+        
         const toast = await this.toastController.create({
-          message: 'Carte centrée sur votre position',
-          duration: 2000,
-          position: 'top'
+          message: 'Carte centrée',
+          duration: 2000
         });
         await toast.present();
       }
     } catch (error) {
-      console.error('Erreur lors de la récupération de la position:', error);
-      
-      const toast = await this.toastController.create({
-        message: 'Impossible de récupérer votre position',
-        duration: 2000,
-        position: 'top',
-        color: 'warning'
-      });
-      await toast.present();
+      console.error('Erreur centrage:', error);
     }
-  }
-
-  /**
-   * Calcule les limites et le centre de la carte
-   */
-  private calculateBounds(photos: UserPhoto[]): { center: [number, number], zoom: number } {
-    const lats = photos.map(p => p.coords!.lat);
-    const lngs = photos.map(p => p.coords!.lng);
-
-    const centerLat = (Math.max(...lats) + Math.min(...lats)) / 2;
-    const centerLng = (Math.max(...lngs) + Math.min(...lngs)) / 2;
-
-    return {
-      center: [centerLat, centerLng],
-      zoom: 12
-    };
-  }
-
-  /**
-   * Nettoie les ressources
-   */
-  private cleanup(): void {
-    if (this.map) {
-      this.map.remove();
-      this.map = undefined;
-    }
-    if (this.cluster) {
-      this.cluster.clearLayers();
-      this.cluster = undefined;
-    }
-    this.markers = [];
   }
 }

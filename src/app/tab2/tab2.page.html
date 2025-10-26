@@ -1,99 +1,41 @@
 <ion-header [translucent]="true">
-  <ion-toolbar color="primary">
-    <ion-title>
-      <ion-icon name="images-outline" style="vertical-align: middle; margin-right: 8px;"></ion-icon>
-      Galerie Photo
-    </ion-title>
+  <ion-toolbar>
+    <ion-title>Galerie</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="gallery-content">
+<ion-content [fullscreen]="true" class="ion-padding">
   
-  <!-- État de chargement -->
-  <div *ngIf="loading" class="loading-container">
-    <ion-spinner name="crescent"></ion-spinner>
-    <p>Chargement des photos...</p>
-  </div>
+  <div class="gallery-container">
+    <!-- État vide -->
+    <div *ngIf="photos.length === 0" class="empty-state">
+      <ion-icon name="images-outline" size="large"></ion-icon>
+      <h2>Aucune photo</h2>
+      <p>Prenez des photos depuis l'onglet Caméra</p>
+    </div>
 
-  <!-- Galerie en grille -->
-  <ion-grid *ngIf="!loading && !isEmpty" fixed="true">
-    <ion-row>
-      <ion-col 
-        size="6" 
-        size-md="4" 
-        size-lg="3" 
-        *ngFor="let photo of photos">
+    <!-- Liste des photos -->
+    <ion-list *ngIf="photos.length > 0">
+      <ion-item *ngFor="let photo of photos; let i = index">
+        <ion-thumbnail slot="start">
+          <img [src]="photo.webviewPath || photo.filepath" />
+        </ion-thumbnail>
         
-        <ion-card 
-          class="photo-card" 
-          (click)="openPhotoDetail(photo)"
-          button="true">
-          
-          <!-- Image de la photo -->
-          <div class="photo-thumbnail">
-            <ion-img 
-              [src]="photo.webviewPath || photo.filepath" 
-              loading="lazy"
-              class="thumbnail-img">
-            </ion-img>
-            
-            <!-- Overlay avec informations -->
-            <div class="photo-overlay">
-              <div class="photo-info">
-                <span class="photo-date">
-                  {{ photo.takenAt | date:'dd/MM' }}
-                </span>
-              </div>
-              
-              <!-- Bouton like -->
-              <ion-button 
-                (click)="toggleLike(photo, $event)"
-                fill="clear" 
-                class="like-button"
-                [color]="photo.liked ? 'danger' : 'light'">
-                <ion-icon 
-                  [name]="photo.liked ? 'heart' : 'heart-outline'"
-                  size="small">
-                </ion-icon>
-              </ion-button>
-            </div>
-          </div>
-          
-          <!-- Badge GPS si coordonnées disponibles -->
-          <ion-badge 
-            *ngIf="photo.coords" 
-            color="primary" 
-            class="gps-badge">
-            <ion-icon name="location"></ion-icon>
-          </ion-badge>
-        </ion-card>
-      </ion-col>
-    </ion-row>
-  </ion-grid>
-
-  <!-- État vide -->
-  <div *ngIf="!loading && isEmpty" class="empty-container">
-    <ion-icon name="images-outline" class="empty-icon"></ion-icon>
-    <h2>Aucune photo</h2>
-    <p>Commencez à capturer des moments !</p>
-    <ion-button 
-      fill="outline" 
-      (click)="capturePhoto()">
-      <ion-icon name="camera-outline" slot="start"></ion-icon>
-      Prendre une photo
-    </ion-button>
+        <ion-label>
+          <h2>Photo {{ i + 1 }}</h2>
+          <p>{{ photo.takenAt | date:'dd/MM/yyyy HH:mm' }}</p>
+          <p *ngIf="photo.coords">📍 {{ photo.coords.lat.toFixed(4) }}, {{ photo.coords.lng.toFixed(4) }}</p>
+        </ion-label>
+        
+        <ion-button slot="end" fill="clear" (click)="toggleLike(photo)">
+          <ion-icon [name]="photo.liked ? 'heart' : 'heart-outline'" [color]="photo.liked ? 'danger' : 'medium'"></ion-icon>
+        </ion-button>
+        
+        <ion-button slot="end" fill="clear" color="danger" (click)="deletePhoto(photo)">
+          <ion-icon name="trash"></ion-icon>
+        </ion-button>
+      </ion-item>
+    </ion-list>
   </div>
 
-  <!-- Bouton flottant pour ajouter une photo -->
-  <ion-fab 
-    *ngIf="!loading" 
-    slot="fixed" 
-    vertical="bottom" 
-    horizontal="end">
-    <ion-fab-button 
-      color="primary"
-      (click)="capturePhoto()">
-      <ion-icon name="camera-outline"></ion-icon>
-    </ion-fab-button>
-  </ion-fab>
 </ion-content>
