@@ -65,15 +65,14 @@
       <ion-icon name="location-outline" slot="start" color="success"></ion-icon>
       <ion-label>
         <h3>Localisation</h3>
-        <p>{{ getCoordinatesLabel() }}</p>
-        <p *ngIf="address" class="address-text">
-          <ion-badge color="primary">
-            <ion-icon name="location-outline"></ion-icon>
-            {{ address }}
-          </ion-badge>
+        <p *ngIf="city" style="font-weight: 600; color: var(--ion-color-primary);">
+          📍 {{ city }}
+        </p>
+        <p *ngIf="!city && !isLoadingAddress" style="font-size: 12px; color: var(--ion-color-medium);">
+          {{ getCoordinatesLabel() }}
         </p>
         <p *ngIf="isLoadingAddress" class="loading-text">
-          Chargement de l'adresse...
+          Chargement...
         </p>
       </ion-label>
     </ion-item>

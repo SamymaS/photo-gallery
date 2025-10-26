@@ -1,36 +1,41 @@
 #map {
   width: 100%;
-  height: calc(100vh - 120px);
-  min-height: 400px;
-  z-index: 1;
+  height: 100%;
+  min-height: 500px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.overlay-loading,
+.overlay-empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+
+  ion-icon {
+    font-size: 64px;
+    color: var(--ion-color-medium);
+    margin-bottom: 16px;
+  }
+
+  p {
+    margin-bottom: 16px;
+    color: var(--ion-color-medium);
+    font-weight: 500;
+  }
 }
 
 ion-fab {
   margin-bottom: 80px;
-  margin-right: 20px;
-}
-
-// Clusters
-.marker-cluster-small {
-  background-color: rgba(100, 150, 255, 0.6);
-  
-  div {
-    background-color: rgba(60, 120, 255, 0.8);
-  }
-}
-
-.marker-cluster-medium {
-  background-color: rgba(255, 154, 0, 0.6);
-  
-  div {
-    background-color: rgba(255, 174, 0, 0.8);
-  }
-}
-
-.marker-cluster-large {
-  background-color: rgba(255, 80, 80, 0.6);
-  
-  div {
-    background-color: rgba(255, 100, 100, 0.8);
-  }
+  margin-right: 16px;
 }

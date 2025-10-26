@@ -22,7 +22,8 @@ import { closeOutline, heart, heartOutline, calendarOutline, locationOutline, ma
 })
 export class PhotoModalComponent implements OnInit {
   @Input() photo!: UserPhoto;
-  address?: string;
+  city?: string;
+  fullAddress?: string;
   isLoadingAddress = false;
 
   constructor(
@@ -34,11 +35,11 @@ export class PhotoModalComponent implements OnInit {
   }
 
   async ngOnInit() {
-    // Charger l'adresse lisible (optionnel)
+    // Charger la ville depuis les coordonnées GPS
     if (this.photo?.coords) {
       this.isLoadingAddress = true;
       try {
-        const url = `https://nominatim.openstreetmap.org/reverse?lat=${this.photo.coords.lat}&lon=${this.photo.coords.lng}&format=json&zoom=18&addressdetails=1`;
+        const url = `https://nominatim.openstreetmap.org/reverse?lat=${this.photo.coords.lat}&lon=${this.photo.coords.lng}&format=json&addressdetails=1`;
         const resp = await fetch(url, { 
           headers: { 
             'Accept-Language': 'fr',
@@ -46,7 +47,10 @@ export class PhotoModalComponent implements OnInit {
           } 
         });
         const data = await resp.json();
-        this.address = data?.display_name || undefined;
+        
+        // Extraire la ville
+        this.city = data?.address?.city || data?.address?.town || data?.address?.village;
+        this.fullAddress = data?.display_name;
       } catch (error) {
         console.warn('Impossible de charger l\'adresse:', error);
       } finally {

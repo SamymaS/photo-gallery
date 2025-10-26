@@ -6,25 +6,27 @@
 
 <ion-content [fullscreen]="true">
   
-  <!-- État de chargement -->
-  <div *ngIf="loading" class="loading-container">
-    <ion-spinner></ion-spinner>
-    <p>Chargement de la carte...</p>
-  </div>
-
-  <!-- État vide -->
-  <div *ngIf="!loading && photos.length === 0" class="empty-state">
-    <ion-icon name="map-outline" size="large"></ion-icon>
-    <h2>Aucune photo géolocalisée</h2>
-    <p>Prenez des photos pour les voir sur la carte</p>
-  </div>
-
   <!-- Carte Leaflet -->
-  <div id="map" *ngIf="!loading && photos.length > 0"></div>
+  <div id="map"></div>
+  
+  <!-- État de chargement overlay -->
+  <div *ngIf="loading" class="overlay-loading">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Chargement...</p>
+  </div>
 
-  <!-- Bouton pour centrer -->
-  <ion-fab *ngIf="!loading && photos.length > 0" slot="fixed" vertical="bottom" horizontal="end">
-    <ion-fab-button (click)="centerMap()">
+  <!-- Message si pas de photos -->
+  <div *ngIf="!loading && photos.length === 0" class="overlay-empty">
+    <ion-icon name="map-outline" size="large"></ion-icon>
+    <p>Aucune photo géolocalisée</p>
+    <ion-button routerLink="/tabs/tab1" fill="outline" size="small">
+      Prendre une photo
+    </ion-button>
+  </div>
+
+  <!-- Bouton pour centrer sur la position -->
+  <ion-fab *ngIf="!loading" slot="fixed" vertical="bottom" horizontal="end">
+    <ion-fab-button (click)="centerOnLocation()" size="small">
       <ion-icon name="locate"></ion-icon>
     </ion-fab-button>
   </ion-fab>
